@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery Status</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    #status {
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+    <h1>Battery Status</h1>
+    <div id="battery">No data yet</div>
+  
+    <script>
+      const { ipcRenderer } = require('electron');
+  
+      ipcRenderer.on('battery-update', (event, data) => {
+        const { battery, timestamp } = data;
+        document.getElementById('battery').innerText = `Battery: ${battery}%\nTimestamp: ${timestamp}`;
+      });
+    </script>
+  </body>
+</html>

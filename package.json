@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "Aplicación de monitoreo de batería de iPhone en Windows",
   "dependencies": {
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "electron-squirrel-startup": "^1.0.1",
     "express": "^4.21.2",

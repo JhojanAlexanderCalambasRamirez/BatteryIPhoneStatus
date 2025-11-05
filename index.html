@@ -1,36 +1,643 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Battery Status</title>
+  <title>iPhone Battery Monitor</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: white;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 50px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.2);
       text-align: center;
-      margin-top: 50px;
+      width: 100%;
+      max-width: 450px;
+      animation: fadeIn 0.5s ease-in;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 90vh;
     }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     h1 {
-      font-size: 24px;
-      color: #333;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
     }
-    #status {
+
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .battery-icon-container {
+      position: relative;
+      margin: 0 auto 30px;
+      width: 140px;
+      height: 70px;
+    }
+
+    .battery-icon {
+      width: 120px;
+      height: 60px;
+      border: 4px solid rgba(148, 163, 184, 0.5);
+      border-radius: 10px;
+      position: relative;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6));
+      box-shadow:
+        inset 0 2px 10px rgba(0, 0, 0, 0.4),
+        0 4px 20px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .battery-tip {
+      width: 8px;
+      height: 28px;
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.5), rgba(100, 116, 139, 0.7));
+      border-radius: 0 4px 4px 0;
+      position: absolute;
+      right: 5px;
+      top: 45%;
+      transform: translateY(-50%);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .battery-fill {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      height: calc(100% - 8px);
+      width: 0%;
+      max-width: calc(100% - 8px);
+      border-radius: 6px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease;
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow:
+        0 0 20px rgba(16, 185, 129, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .battery-fill.critical {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow:
+        0 0 20px rgba(239, 68, 68, 0.7),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .battery-fill.low {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      box-shadow:
+        0 0 20px rgba(249, 115, 22, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .battery-fill.medium {
+      background: linear-gradient(135deg, #eab308, #ca8a04);
+      box-shadow:
+        0 0 20px rgba(234, 179, 8, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .battery-fill.good {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow:
+        0 0 20px rgba(34, 197, 94, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .battery-fill.full {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow:
+        0 0 20px rgba(16, 185, 129, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    .percentage {
+      font-size: 72px;
+      font-weight: 700;
+      margin: 20px 0 10px;
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      line-height: 1;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .status-text {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(100, 116, 139, 0.2);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 10px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease;
+      background: linear-gradient(90deg, #10b981, #059669);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .progress-bar.critical {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+    }
+
+    .progress-bar.low {
+      background: linear-gradient(90deg, #f97316, #ea580c);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+    }
+
+    .progress-bar.medium {
+      background: linear-gradient(90deg, #eab308, #ca8a04);
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
+    }
+
+    .progress-bar.good {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+    }
+
+    .progress-bar.full {
+      background: linear-gradient(90deg, #10b981, #059669);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .info-card {
+      background: rgba(15, 23, 42, 0.5);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(100, 116, 139, 0.4);
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .info-value {
       font-size: 18px;
-      color: #555;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .timestamp {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #64748b;
+      padding-top: 20px;
+      border-top: 1px solid rgba(100, 116, 139, 0.2);
+    }
+
+    .no-data {
+      font-size: 18px;
+      color: #94a3b8;
+      padding: 80px 0;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .no-data > div:last-child {
+      animation: blink 2.5s ease-in-out infinite;
+    }
+
+    .no-data-icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+      opacity: 0.6;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .no-data-icon::before {
+      content: "";
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    @keyframes blink {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: blink 2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    }
+
+    @keyframes blink {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Mejora visual del icono de batería */
+    .battery-percentage-inside {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Pantalla de splash */
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      animation: fadeOut 0.5s ease-out 2.5s forwards;
+    }
+
+    .splash-logo {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 30px;
+      animation: slideIn 0.6s ease-out;
+    }
+
+    .splash-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      letter-spacing: 2px;
+      margin-bottom: 40px;
+      animation: slideIn 0.6s ease-out 0.2s both;
+    }
+
+    /* Batería de carga en splash */
+    .splash-battery-container {
+      position: relative;
+      width: 180px;
+      height: 90px;
+      margin-bottom: 20px;
+      animation: slideIn 0.6s ease-out 0.4s both;
+    }
+
+    .splash-battery {
+      width: 160px;
+      height: 80px;
+      border: 5px solid rgba(148, 163, 184, 0.6);
+      border-radius: 12px;
+      position: relative;
+      background: rgba(15, 23, 42, 0.8);
+      box-shadow:
+        inset 0 2px 12px rgba(0, 0, 0, 0.5),
+        0 4px 20px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+
+    .splash-battery-tip {
+      width: 10px;
+      height: 36px;
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.6), rgba(100, 116, 139, 0.8));
+      border-radius: 0 5px 5px 0;
+      position: absolute;
+      right: 5px;
+      top: 45%;
+      transform: translateY(-50%);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .splash-battery-fill {
+      position: absolute;
+      left: 5px;
+      top: 5px;
+      height: calc(100% - 10px);
+      width: 0%;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      box-shadow:
+        0 0 25px rgba(96, 165, 250, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      animation: fillBattery 2s ease-in-out forwards;
+    }
+
+    .splash-percentage {
+      font-size: 32px;
+      font-weight: 700;
+      color: #60a5fa;
+      animation: countUp 2s ease-out forwards;
+    }
+
+    @keyframes fillBattery {
+      from {
+        width: 0%;
+      }
+      to {
+        width: calc(100% - 10px);
+      }
+    }
+
+    @keyframes countUp {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
     }
   </style>
 </head>
 <body>
-    <h1>Battery Status</h1>
-    <div id="battery">No data yet</div>
-  
-    <script>
-      const { ipcRenderer } = require('electron');
-  
-      ipcRenderer.on('battery-update', (event, data) => {
-        const { battery, timestamp } = data;
-        document.getElementById('battery').innerText = `Battery: ${battery}%\nTimestamp: ${timestamp}`;
+  <!-- Pantalla de splash -->
+  <div class="splash-screen">
+    <div class="splash-logo">Dev J4CR</div>
+    <div class="splash-subtitle">DEVELOPER</div>
+
+    <div class="splash-battery-container">
+      <div class="splash-battery">
+        <div class="splash-battery-fill"></div>
+      </div>
+      <div class="splash-battery-tip"></div>
+    </div>
+
+    <div class="splash-percentage" id="splash-counter">0%</div>
+  </div>
+
+  <div class="container">
+    <h1>iPhone Battery Monitor</h1>
+    <div class="subtitle">
+      <span class="status-indicator"></span>
+      <span>Monitoreo en tiempo real</span>
+    </div>
+
+    <div id="no-data" class="no-data">
+      <div class="no-data-icon"></div>
+      <div>Esperando datos del iPhone...</div>
+    </div>
+
+    <div id="battery-display" class="hidden">
+      <div class="battery-icon-container">
+        <div class="battery-icon">
+          <div id="battery-fill" class="battery-fill"></div>
+        </div>
+        <div class="battery-tip"></div>
+      </div>
+
+      <div id="percentage" class="percentage">0%</div>
+      <div id="status-text" class="status-text">Iniciando...</div>
+
+      <div class="info-grid">
+        <div class="info-card" style="grid-column: 1 / -1;">
+          <div class="info-label">Dispositivo</div>
+          <div id="device-name" class="info-value">—</div>
+        </div>
+      </div>
+
+      <div id="timestamp" class="timestamp">
+        Última actualización: —
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Animación del contador de porcentaje en splash
+    let counter = 0;
+    const splashCounter = document.getElementById('splash-counter');
+    const counterInterval = setInterval(() => {
+      counter += 2;
+      if (counter <= 100) {
+        splashCounter.textContent = `${counter}%`;
+      } else {
+        clearInterval(counterInterval);
+      }
+    }, 40); // 40ms * 50 iteraciones = 2 segundos
+
+    function updateBattery(data) {
+      const { battery, timestamp, namecel } = data;
+
+      // Mostrar el display y ocultar el mensaje de "no data"
+      document.getElementById('no-data').classList.add('hidden');
+      document.getElementById('battery-display').classList.remove('hidden');
+
+      // Actualizar porcentaje
+      const percentageEl = document.getElementById('percentage');
+      percentageEl.textContent = `${battery}%`;
+      percentageEl.style.animation = 'none';
+      setTimeout(() => {
+        percentageEl.style.animation = 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      }, 10);
+
+      // Actualizar relleno del icono de batería
+      const batteryFill = document.getElementById('battery-fill');
+      const batteryIcon = batteryFill.parentElement;
+
+      // Calcular ancho correcto para el relleno de batería
+      const iconWidth = batteryIcon.offsetWidth;
+      const maxFillWidth = iconWidth - 8; // Restar los márgenes (4px * 2)
+      const fillWidth = (battery / 100) * maxFillWidth;
+
+      batteryFill.style.width = `${fillWidth}px`; // Usar píxeles en lugar de porcentaje
+
+      // Determinar clase de color según el nivel
+      let colorClass = 'full';
+      let statusText = 'Excelente';
+      let stateText = 'Óptimo';
+
+      if (battery <= 15) {
+        colorClass = 'critical';
+        statusText = 'Batería crítica';
+        stateText = 'Crítico';
+      } else if (battery <= 30) {
+        colorClass = 'low';
+        statusText = 'Batería baja';
+        stateText = 'Bajo';
+      } else if (battery <= 60) {
+        colorClass = 'medium';
+        statusText = 'Nivel medio';
+        stateText = 'Medio';
+      } else if (battery <= 85) {
+        colorClass = 'good';
+        statusText = 'Buen nivel';
+        stateText = 'Bueno';
+      }
+
+      // Aplicar clases de color
+      batteryFill.className = `battery-fill ${colorClass}`;
+
+      // Actualizar textos
+      document.getElementById('status-text').textContent = statusText;
+
+      // Actualizar nombre del dispositivo
+      if (namecel) {
+        document.getElementById('device-name').textContent = namecel;
+      } else {
+        document.getElementById('device-name').textContent = 'iPhone';
+      }
+
+      // Formatear y actualizar timestamp
+      const date = new Date(timestamp);
+      const formattedTime = date.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
       });
-    </script>
-  </body>
+      document.getElementById('timestamp').textContent = `Última actualización: ${formattedTime}`;
+    }
+
+    ipcRenderer.on('battery-update', (event, data) => {
+      updateBattery(data);
+    });
+  </script>
+</body>
 </html>

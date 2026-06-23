@@ -6,6 +6,7 @@ import BatteryShared
 final class NetworkSender: ObservableObject {
     @Published var connectionState: ConnectionState = .searching
     @Published var macName: String?
+    @Published var macBattery: BatteryData?
 
     private var browser: NWBrowser?
     private var connection: NWConnection?
@@ -61,8 +62,10 @@ final class NetworkSender: ObservableObject {
                 switch state {
                 case .ready:
                     self?.connectionState = .connected
+                    self?.startReceiving(on: conn)
                 case .failed, .cancelled:
                     self?.connectionState = .disconnected
+                    self?.macBattery = nil
                     self?.reconnect()
                 default:
                     break
@@ -72,6 +75,27 @@ final class NetworkSender: ObservableObject {
 
         connection = conn
         conn.start(queue: queue)
+    }
+
+    private func startReceiving(on conn: NWConnection) {
+        receiveNext(on: conn)
+    }
+
+    private nonisolated func receiveNext(on conn: NWConnection) {
+        conn.receive(minimumIncompleteLength: 1, maximumLength: 4096) { [weak self] content, _, isComplete, error in
+            if let data = content {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                if let battery = try? decoder.decode(BatteryData.self, from: data) {
+                    Task { @MainActor in
+                        self?.macBattery = battery
+                    }
+                }
+            }
+            if !isComplete && error == nil {
+                self?.receiveNext(on: conn)
+            }
+        }
     }
 
     private func reconnect() {

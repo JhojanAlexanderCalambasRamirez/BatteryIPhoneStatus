@@ -17,16 +17,16 @@ struct ContentView: View {
                 Spacer()
                     .frame(height: geo.size.height * 0.04)
 
-                if let data = batteryManager.currentData {
-                    batteryDisplay(data, size: circleSize)
+                if let macData = networkSender.macBattery {
+                    macBatteryDisplay(macData, size: circleSize)
                 } else {
-                    ProgressView("Leyendo batería...")
+                    waitingForMac
                 }
 
                 Spacer()
 
                 connectionStatus
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 12)
 
                 creditsSection
                     .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? 8 : 20)
@@ -40,24 +40,24 @@ struct ContentView: View {
     }
 
     private var headerSection: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "iphone.gen3")
+        VStack(spacing: 6) {
+            Image(systemName: "laptopcomputer")
                 .font(.system(size: 40))
                 .foregroundStyle(.blue)
                 .symbolEffect(.pulse, isActive: networkSender.connectionState == .searching)
 
-            Text("Battery Sender")
+            Text("Mac Battery")
                 .font(.title2.bold())
                 .foregroundStyle(.white)
 
-            Text("Enviando datos a Mac")
+            Text("Monitor en tiempo real")
                 .font(.subheadline)
                 .foregroundStyle(.gray)
         }
     }
 
-    private func batteryDisplay(_ data: BatteryData, size: CGFloat) -> some View {
-        VStack(spacing: 20) {
+    private func macBatteryDisplay(_ data: BatteryData, size: CGFloat) -> some View {
+        VStack(spacing: 16) {
             ZStack {
                 Circle()
                     .stroke(Color.white.opacity(0.1), lineWidth: 10)
@@ -79,7 +79,7 @@ struct ContentView: View {
                         .foregroundStyle(colorForCategory(data.colorCategory))
 
                     Text("\(data.level)%")
-                        .font(.system(size: size * 0.22, weight: .bold, design: .rounded))
+                        .font(.system(size: size * 0.24, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
 
                     HStack(spacing: 4) {
@@ -101,6 +101,26 @@ struct ContentView: View {
         }
     }
 
+    private var waitingForMac: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "laptopcomputer.trianglebadge.exclamationmark")
+                .font(.system(size: 48))
+                .foregroundStyle(.gray.opacity(0.5))
+
+            Text(networkSender.connectionState == .connected
+                 ? "Esperando datos del Mac..."
+                 : "Conectando con Mac...")
+                .font(.subheadline)
+                .foregroundStyle(.gray)
+
+            Text("Ambos dispositivos deben estar\nen la misma red WiFi")
+                .font(.caption)
+                .foregroundStyle(.gray.opacity(0.6))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 30)
+    }
+
     private var connectionStatus: some View {
         HStack(spacing: 8) {
             Circle()
@@ -112,7 +132,7 @@ struct ContentView: View {
                 .foregroundStyle(.gray)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(Color.white.opacity(0.08), in: Capsule())
     }
 

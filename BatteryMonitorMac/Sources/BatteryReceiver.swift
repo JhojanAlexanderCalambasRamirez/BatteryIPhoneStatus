@@ -12,10 +12,12 @@ final class BatteryReceiver: ObservableObject {
     private var listener: NWListener?
     private var connection: NWConnection?
     private let queue = DispatchQueue(label: "battery.receiver")
+    private var macBatteryTimer: Timer?
 
     init() {
         requestNotificationPermission()
         startListener()
+        startMacBatteryUpdates()
     }
 
     func startListener() {
@@ -75,6 +77,7 @@ final class BatteryReceiver: ObservableObject {
                 case .ready:
                     self.connectedDevice = "Conectado"
                     self.startReceiving(on: conn)
+                    self.sendMacBattery()
                 case .failed, .cancelled:
                     self.connectedDevice = nil
                 default:
@@ -109,6 +112,26 @@ final class BatteryReceiver: ObservableObject {
                 }
             }
         }
+    }
+
+    private func startMacBatteryUpdates() {
+        sendMacBattery()
+        macBatteryTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.sendMacBattery()
+            }
+        }
+    }
+
+    private func sendMacBattery() {
+        guard let conn = connection, conn.state == .ready,
+              let macData = MacBatteryManager.getCurrentData() else { return }
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard let jsonData = try? encoder.encode(macData) else { return }
+
+        conn.send(content: jsonData, completion: .contentProcessed { _ in })
     }
 
     private func handleBatteryUpdate(_ battery: BatteryData) {

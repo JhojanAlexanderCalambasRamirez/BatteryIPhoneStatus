@@ -1,6 +1,7 @@
 import Foundation
 import Network
 import BatteryShared
+import WidgetKit
 
 @MainActor
 final class NetworkSender: ObservableObject {
@@ -89,6 +90,8 @@ final class NetworkSender: ObservableObject {
                 if let battery = try? decoder.decode(BatteryData.self, from: data) {
                     Task { @MainActor in
                         self?.macBattery = battery
+                        SharedStorage.save(battery, forKey: SharedStorage.macBatteryKey, suiteName: SharedStorage.iosSuiteName)
+                        WidgetCenter.shared.reloadAllTimelines()
                     }
                 }
             }

@@ -2,6 +2,7 @@ import Foundation
 import Network
 import BatteryShared
 import UserNotifications
+import WidgetKit
 
 @MainActor
 final class BatteryReceiver: ObservableObject {
@@ -138,6 +139,8 @@ final class BatteryReceiver: ObservableObject {
         let previousLevel = latestData?.level
         latestData = battery
         connectedDevice = battery.deviceName
+        SharedStorage.save(battery, forKey: SharedStorage.iphoneBatteryKey, suiteName: SharedStorage.macSuiteName)
+        WidgetCenter.shared.reloadAllTimelines()
 
         if let prev = previousLevel, prev > 20 && battery.level <= 20 {
             sendLowBatteryNotification(battery)
